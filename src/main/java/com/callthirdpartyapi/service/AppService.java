@@ -70,5 +70,7 @@ public class AppService {
 		HttpEntity<?> entity = new HttpEntity<>(gethttpHeaders());
 		return restTemplate.exchange(URL.concat("/"+id), HttpMethod.DELETE , entity , PostDto.class).getBody();
 	}
+	
+	
 
 }

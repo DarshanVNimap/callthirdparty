@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.callthirdpartyapi.dto.ClientRequest;
 import com.callthirdpartyapi.dto.PostDto;
 import com.callthirdpartyapi.service.AppService;
 
