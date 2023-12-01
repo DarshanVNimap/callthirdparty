@@ -1,12 +1,11 @@
 package com.callthirdpartyapi.service;
 
-import java.io.UnsupportedEncodingException;
-import java.util.List;
+import java.util.Date;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,11 +15,10 @@ import com.callthirdpartyapi.dto.ClientRequest;
 import com.callthirdpartyapi.model.Client;
 import com.callthirdpartyapi.repo.ClientRepository;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
-public class AdminService {
+public class RegisterService {
 	
 	@Autowired
 	private ClientRepository clientRepo;
@@ -33,24 +31,12 @@ public class AdminService {
 	
     @Autowired
     private JavaMailSender mailSender;
+    
+    @Value("${account.lock.time}")
+    private long LOCK_DURATION_TIME;
+    
 	
-	public List<ClientRequest> getclients() {
-		
-		return clientRepo.findAll().stream()
-							.map( client ->  mapper.map(client ,ClientRequest.class))
-							.collect(Collectors.toList());
-		
-	}
-	
-	public ClientRequest getclient(Long id) {
-		Client c = clientRepo.findById(id).orElseThrow();
-		ClientRequest cr = mapper.map(c, ClientRequest.class);
-		cr.setPassword("Confidencial");
-		return cr;
-		
-	}
-	
-	public String registerclient(ClientRequest client) {
+	public String registerclient(ClientRequest client , String url) throws Exception {
 		
 		client.setPassword(
 				passwordEncoder.encode(client.getPassword())
@@ -60,16 +46,21 @@ public class AdminService {
 		c.setId((long) 0);
 		c.setEnable(false);
 		c.setVerificationCode(UUID.randomUUID().toString());
+		c.setRole("ROLE_USER");
 		clientRepo.save(c);
+			
+		sendMail(c,url);
 		
 		return "Register successfully";
 		
 	}
 	
+	@Value("${spring.mail.username}")
+	private String from;
 	
 	public void sendMail(Client client , String url) throws Exception {
+		
 		String toAddress = client.getUsername();
-	    String fromAddress = "valadarshan2002@gmail.com";
 	    String senderName = "noreply@nimap.com";
 	    String subject = "Please verify your registration";
 	    String content = "Dear [[name]],<br>"
@@ -80,8 +71,8 @@ public class AdminService {
 	     
 	    MimeMessage message = mailSender.createMimeMessage();
 	    MimeMessageHelper helper = new MimeMessageHelper(message);
-	     
-	    helper.setFrom(fromAddress, senderName);
+	 
+	    helper.setFrom(from, senderName);
 	    helper.setTo(toAddress);
 	    helper.setSubject(subject);
 	     
@@ -93,8 +84,62 @@ public class AdminService {
 	    helper.setText(content, true); 
 	     
 	    mailSender.send(message);
+	    System.out.println("mail sended");
 	}
 	
+	public boolean verify(String verifyCode) {
+		Client c = clientRepo.findByVerificationCode(verifyCode);
+		if(c != null) {
+		c.setEnable(true);
+		c.setVerificationCode(null);
+		c.setFailedAttempt((short)-1);
+		c.setIsAccountNonLock(true);
+		clientRepo.save(c);
+		return true;
+		}
+		
+		return false;
+	}
+	
+	public void increaseFailAttempt(Client client) {
+		
+		clientRepo.updateFailedAttempt(
+					(short) (client.getFailedAttempt()+1) ,
+					client.getUsername()
+					);
+		
+	}
+	
+	public void resetAttempt(String email) {
+		clientRepo.updateFailedAttempt(Short.valueOf("0"), email);
+	}
+	
+	public void lock(Client client) {
+		
+		client.setIsAccountNonLock(false);
+		client.setLockTime(new Date());
+		clientRepo.save(client);
+		
+	}
+	
+	
+	public boolean unlockAccountTimeExpired(Client client) {
+		
+		long clientLockTime = client.getLockTime().getTime();
+		long currentTime = System.currentTimeMillis();
+		
+		if(clientLockTime + LOCK_DURATION_TIME < currentTime) {
+			
+			client.setIsAccountNonLock(true);
+			client.setLockTime(null);
+			client.setFailedAttempt(Short.valueOf("0"));
+			clientRepo.save(client);
+			
+			return true;
+		}
+		
+		return false;
+	}
 	
 	
 	

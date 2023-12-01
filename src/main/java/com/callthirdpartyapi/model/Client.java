@@ -25,10 +25,21 @@ public class Client {
 	
 	@Column(unique = true)
 	private String username;
+	
 	private String password;
+	
 	private String role;
+	
 	private Boolean enable;
+	
 	private String verificationCode;
+	
+	private Short failedAttempt;
+	
+	private Boolean isAccountNonLock;
+	
+	private Date lockTime;
+	
 	private Date createdAt;
 
 }

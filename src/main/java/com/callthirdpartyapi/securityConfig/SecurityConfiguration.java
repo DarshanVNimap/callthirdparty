@@ -18,10 +18,14 @@ public class SecurityConfiguration {
 	@Autowired
 	private CustomeSuccesserHandler handler;
 	
+	@Autowired
+	private CustomeFailerHandler failerHandler;
+	
 	@Bean
 	public UserDetailsService userDetailService() {
 		return new CustomeUserDetailService();
 	}
+	
 	
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
@@ -44,9 +48,10 @@ public class SecurityConfiguration {
 			.csrf().disable()
 			.authorizeHttpRequests()
 			.requestMatchers(HttpMethod.GET,"/posts/**").hasAnyRole("USER" , "ADMIN")
-			.anyRequest().hasRole("ADMIN")
+			.anyRequest().permitAll()
 			.and()
 			.formLogin()
+			.failureHandler(failerHandler)
 			.successHandler(handler)
 			.and()
 			.logout();
