@@ -42,7 +42,7 @@ public class CustomeFailerHandler extends SimpleUrlAuthenticationFailureHandler{
 		
 		if(c.getEnable()) {
 			if(c.getIsAccountNonLock()) {
-				if(c.getFailedAttempt() < TIME_OF_ATTEMPT - 1) {
+				if(c.getFailedAttempt() < TIME_OF_ATTEMPT) {
 					service.increaseFailAttempt(c);
 				}
 				else {

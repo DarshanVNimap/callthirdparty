@@ -92,7 +92,7 @@ public class RegisterService {
 		if(c != null) {
 		c.setEnable(true);
 		c.setVerificationCode(null);
-		c.setFailedAttempt((short)-1);
+		c.setFailedAttempt((short)0);
 		c.setIsAccountNonLock(true);
 		clientRepo.save(c);
 		return true;

@@ -15,4 +15,10 @@ public class GlobalExceptionHandler {
 							.body(ex.getMessage());
 	}
 
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<?> handleException(Exception ex){
+		return ResponseEntity
+							.badRequest()
+							.body(ex.getMessage());
+	}
 }
